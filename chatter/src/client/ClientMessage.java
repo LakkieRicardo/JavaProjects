@@ -10,4 +10,8 @@ public class ClientMessage {
         this.content = content;
     }
 
+    public String toString() {
+        return String.format("[sender=%s,content=%s]", sender, content);
+    }
+
 }

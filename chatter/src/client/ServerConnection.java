@@ -29,6 +29,17 @@ public class ServerConnection implements Flushable, Closeable {
         // Special message: initial username. Other messages must be formatted
         writer.println(username);
         writer.flush();
+        String serverResponse = reader.readLine();
+        if (serverResponse.startsWith(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE)) {
+            String errorMessage = serverResponse.substring((ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE).length());
+            JOptionPane.showMessageDialog(null, "Invalid username: " + errorMessage);
+            writer.close();
+            reader.close();
+            socket.close();
+            listenerThread = null;
+            pingThread = null;
+            return;
+        }
         connectedUsersCache = Arrays.asList(new ClientUser(username, this));
         listenerThread = new Thread(this::listen);
         listenerThread.start();
@@ -114,7 +125,12 @@ public class ServerConnection implements Flushable, Closeable {
                 if (serverResponse.equals(ServerDataCodes.CLIENT_PING_CODE)) {
                     lastPing = System.currentTimeMillis() - lastPingTime;
                 }
-                // TODO add username update error handler
+                if (serverResponse.startsWith(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE)) {
+                    String errorMessage = serverResponse.substring((ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE).length());
+                    String[] errorMessageParts = errorMessage.split(";");
+                    username = errorMessageParts[0];
+                    ClientRender.showMessage(Ansi.ansi().fgRed().a("Failed to change username: " + errorMessageParts[1]).fgBlack().toString());
+                }
             } catch (IOException e) {
                 continue;
             }
@@ -125,7 +141,8 @@ public class ServerConnection implements Flushable, Closeable {
      * Sends request to server to update nickname
      * @param newUsername
      */
-    public void updateUsername(String newUsername) {
+    public void updateUsername(String newUsername) throws IOException {
+        getSelfUser(false).username = newUsername;
         username = newUsername;
         String updateMessage = ServerDataCodes.REQUEST_CODE + ServerDataCodes.USERNAME_CODE + newUsername;
         writer.println(updateMessage);

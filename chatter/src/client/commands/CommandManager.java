@@ -6,10 +6,7 @@ import org.fusesource.jansi.Ansi;
 
 import client.Client;
 import client.ClientRender;
-import client.commands.impl.CommandHelp;
-import client.commands.impl.CommandPing;
-import client.commands.impl.CommandQuit;
-import client.commands.impl.CommandUserList;
+import client.commands.impl.*;
 
 public class CommandManager {
     
@@ -26,6 +23,7 @@ public class CommandManager {
         initCommand(new CommandHelp());
         initCommand(new CommandUserList());
         initCommand(new CommandPing());
+        initCommand(new CommandUsername());
     }
 
     public static void handleCommand(String input, Client client) {

@@ -12,6 +12,7 @@ public class ServerUser {
     public final PrintWriter writer;
     public long latestPing = 0;
     public long latestPingTime = 0;
+    public long lastClientPing = -1;
 
     public ServerUser(Socket socket, BufferedReader reader, PrintWriter writer) {
         this.socket = socket;

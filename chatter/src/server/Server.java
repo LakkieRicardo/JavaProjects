@@ -48,18 +48,26 @@ public class Server {
         return false;
     }
 
+    public void broadcastMessage(String message) {
+        for (ServerUser user : connectedUsers) {
+            user.writer.println(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BROADCAST_CODE + message);
+            user.writer.flush();
+        }
+    }
+
     private void handleUsernameRequest(BufferedReader reader, PrintWriter writer, ServerUser user, String requestData) {
-        if (!requestData.matches("[a-zA-Z0-9]{1,16}")) {
-            writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE + "Invalid username format");
+        if (!requestData.matches("^[a-zA-Z0-9]{1,16}$")) {
+            writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE + requestData + ";Invalid username format");
             writer.flush();
             return;
         }
         if (usernameExists(requestData)) {
-            writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE + "Username already exists");
+            writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE + requestData + ";Username already exists");
             writer.flush();
             return;
         }
         System.out.printf("Changing user with name %s to name %s\n", user.username, requestData);
+        broadcastMessage(String.format("User %s changed their name to %s", user.username, requestData));
         user.username = requestData;
         writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_OK_CODE + ServerDataCodes.USERNAME_CODE);
         writer.flush();
@@ -103,6 +111,24 @@ public class Server {
             // Wait for username
             while (!reader.ready()) { }
             username = reader.readLine();
+            if (usernameExists(username)) {
+                writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + "Username already exists");
+                writer.flush();
+                writer.close();
+                reader.close();
+                socket.close();
+                return;
+            }
+            if (!username.matches("^[a-zA-Z0-9]{1,16}$")) {
+                writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + "Username does not match format");
+                writer.flush();
+                writer.close();
+                reader.close();
+                socket.close();
+                return;
+            }
+            writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_OK_CODE);
+            writer.flush();
         } catch (Exception e) {
             System.err.printf("Unable to connect to user @ %s, error message: %s\n", socket.getInetAddress(), e.getMessage());
             return;
@@ -123,6 +149,16 @@ public class Server {
         }
         while (!serverSocket.isClosed()) {
             try {
+                if (user.lastClientPing != -1) {
+                    if (System.currentTimeMillis() - user.lastClientPing > 10000) {
+                        System.out.printf("%s did not ping for 10+ seconds; timing out...\n", user);
+                        connectedUsers.remove(user);
+                        socket.close();
+                        reader.close();
+                        writer.close();
+                        return;
+                    }
+                }
                 if (!reader.ready()) {
                     continue;
                 }
@@ -150,6 +186,7 @@ public class Server {
                 if (message.equals(ServerDataCodes.CLIENT_PING_CODE)) {
                     user.writer.println(ServerDataCodes.CLIENT_PING_CODE);
                     user.writer.flush();
+                    user.lastClientPing = System.currentTimeMillis();
                 }
             } catch (Exception e) {
                 System.err.println("Warning: error while listening for client: " + e.getMessage());
@@ -207,13 +244,10 @@ public class Server {
                     continue;
                 }
                 String content = input.substring("broadcast ".length());
-                for (ServerUser user : server.connectedUsers) {
-                    user.writer.println(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BROADCAST_CODE + content);
-                    user.writer.flush();
-                }
+                server.broadcastMessage(content);
             }
             if (input.startsWith("ping")) {
-                if (!input.matches("ping [a-zA-Z0-9]{1,16}")) {
+                if (!input.matches("ping [a-zA-Z0-9]{1,16}$")) {
                     if (server.connectedUsers.size() == 0) {
                         System.out.println("No connected users");
                         continue;

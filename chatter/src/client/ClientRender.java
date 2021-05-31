@@ -48,7 +48,7 @@ public class ClientRender {
             return;
         }
         try {
-            if (!usernameText.matches("[a-zA-Z0-9]{1,16}")) {
+            if (!usernameText.matches("^[a-zA-Z0-9]{1,16}$")) {
                 throw new Exception("Username does not match required format");
             }
             details.username = usernameText;
@@ -151,6 +151,8 @@ public class ClientRender {
         buttonCons.gridx = 0;
         buttonCons.gridy = 4;
         buttonCons.gridwidth = 2;
+        frame.add(button, buttonCons);
+        
         button.addMouseListener(new MouseListener() {
              public void mouseClicked(MouseEvent e) {
                  handleConnectClick();
@@ -160,7 +162,7 @@ public class ClientRender {
             public void mousePressed(MouseEvent e) { }
             public void mouseReleased(MouseEvent e) { }
         });
-        button.addKeyListener(new KeyListener() {
+        KeyListener connectClickHandler = new KeyListener() {
             public void keyTyped(KeyEvent e) { }
             public void keyPressed(KeyEvent e) { }
             public void keyReleased(KeyEvent e) {
@@ -168,9 +170,11 @@ public class ClientRender {
                     handleConnectClick();
                 }
             }
-        });
-        frame.add(button, buttonCons);
-
+        };
+        button.addKeyListener(connectClickHandler);
+        usernameField.addKeyListener(connectClickHandler);
+        portField.addKeyListener(connectClickHandler);
+        hostField.addKeyListener(connectClickHandler);
         frame.pack();
         frame.setVisible(true);
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -203,7 +207,7 @@ public class ClientRender {
         messageHistoryConstraints.fill = GridBagConstraints.BOTH;
         messageHistoryConstraints.weighty = 10.0d;
         messageHistoryConstraints.weightx = 1.0d;
-        frame.add(messageHistory, messageHistoryConstraints);
+        frame.add(new JScrollPane(messageHistory), messageHistoryConstraints);
 
         // Send message bar
         messageInput = new TextField();
@@ -220,7 +224,8 @@ public class ClientRender {
                             return;
                         }
                         server.sendMessage(content);
-                        showMessage(new ClientMessage(server.getSelfUser(true), content));
+                        ClientMessage selfMessage = new ClientMessage(server.getSelfUser(true), content);
+                        showMessage(selfMessage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
@@ -258,7 +263,7 @@ public class ClientRender {
         messageHistory.setEditable(true);
         if (message.sender.username.equals(message.sender.server.getSelfUser(false).username)) {
             // Sender is self
-            messageHistory.appendANSI(ansi().fgRed().a("You: ").fgBlack().a(message.content).newline().toString());
+            messageHistory.appendANSI(ansi().fgRed().a(message.sender.username + ": ").fgBlack().a(message.content).newline().toString());
         } else {
             // Sender is someone else
             messageHistory.appendANSI(ansi().fgGreen().a(message.sender.username + ": ").fgBlack().a(message.content).newline().toString());

@@ -19,6 +19,9 @@ public class Client {
     public Client(InetAddress host, int port, String username) {
         try {
             server = new ServerConnection(host, port, username);
+            if (server.socket.isClosed()) {
+                return;
+            }
             server.getConnectedUsers(true);
         } catch (Exception e) {
             e.printStackTrace();
@@ -81,6 +84,10 @@ public class Client {
         System.out.println("Connecting with details: " + details + "...");
         CommandManager.initCommands();
         Client client = new Client(details);
+        if (client.getServer().isClosed()) {
+            System.out.println("Failed to connect to server with username " + details.username);
+            System.exit(2);
+        }
         if (client.server == null && !cliInput) {
             JOptionPane.showMessageDialog(null, "Failed to connect to server with details: " + details);
             System.exit(1);
