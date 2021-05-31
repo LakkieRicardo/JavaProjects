@@ -84,7 +84,7 @@ public class Server {
     }
 
     private void handleMessageRequest(BufferedReader reader, PrintWriter writer, ServerUser user, String requestData) {
-        if (requestData.contains("\n")) {
+        if (requestData.contains("\n") || requestData.length() == 0) {
             return;
         }
         messageLog.add(new ServerMessage(user, requestData));
@@ -178,6 +178,10 @@ public class Server {
                 if (message.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE)) {
                     System.out.printf("Disconnecting user %s...\n", user.username);
                     connectedUsers.remove(user);
+                    for (ServerUser userAll : connectedUsers) {
+                        userAll.writer.println(ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE + user.username);
+                        userAll.writer.flush();
+                    }
                     break;
                 }
                 if (message.startsWith(ServerDataCodes.PING_CODE)) {

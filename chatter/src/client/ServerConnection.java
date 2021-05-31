@@ -58,6 +58,7 @@ public class ServerConnection implements Flushable, Closeable {
                 lastPingTime = System.currentTimeMillis();
                 writer.println(ServerDataCodes.CLIENT_PING_CODE);
                 writer.flush();
+                getConnectedUsers(true);
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -130,6 +131,10 @@ public class ServerConnection implements Flushable, Closeable {
                     String[] errorMessageParts = errorMessage.split(";");
                     username = errorMessageParts[0];
                     ClientRender.showMessage(Ansi.ansi().fgRed().a("Failed to change username: " + errorMessageParts[1]).fgBlack().toString());
+                }
+                if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE)) {
+                    String updateMessage = serverResponse.substring((ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE).length());
+                    ClientRender.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(String.format("User %s has disconnected", updateMessage)).toString());
                 }
             } catch (IOException e) {
                 continue;

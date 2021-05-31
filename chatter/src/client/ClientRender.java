@@ -224,7 +224,7 @@ public class ClientRender {
                             return;
                         }
                         server.sendMessage(content);
-                        ClientMessage selfMessage = new ClientMessage(server.getSelfUser(true), content);
+                        ClientMessage selfMessage = new ClientMessage(server.getSelfUser(false), content);
                         showMessage(selfMessage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -260,6 +260,9 @@ public class ClientRender {
     }
     
     public static synchronized void showMessage(ClientMessage message) throws IOException {
+        if (message.content.length() == 0 || message.content.contains("\n")) {
+            return;
+        }
         messageHistory.setEditable(true);
         if (message.sender.username.equals(message.sender.server.getSelfUser(false).username)) {
             // Sender is self
