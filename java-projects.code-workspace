@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "chatter"
+		},
+		{
+			"path": "crossword"
+		}
+	],
+	"settings": {
+		"java.dependency.packagePresentation": "hierarchical"
+	}
+}
