@@ -5,10 +5,26 @@
 
 ## Current applications
 
-### Chatter
+--------------------------------
+
+## Chatter
+
+### What is Chatter?
+
+
+
+> When people talk, listen completely. Most people never listen.
+
+
+
 Simple application for text communications using TCP. Server is operated via command line
 
-#### Starting the server and client
+
+
+### Starting the server and client
+
+
+
 The server must be started via command line as such:
 ```sh
 java -jar ./server.jar [port]

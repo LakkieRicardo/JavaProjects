@@ -1,10 +1,12 @@
-# Server
+# Planned features/tasks
 
-- Manages user connections
-- Receives and broadcasts messages
-- Ban/kick commands
+## Server
 
-# Client
+- [x] Manages user connections
+- [x] Receives and broadcasts messages
+- [ ] Ban/kick commands
 
-- Displays message history
-- Active server, private message, leave server, list of room members commands
+## Client
+
+- [ ] Displays message history
+- [x] Active server, private message, leave server, list of room members commands
