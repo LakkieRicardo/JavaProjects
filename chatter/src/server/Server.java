@@ -16,7 +16,7 @@ public class Server {
     private final List<ServerMessage> messageLog = new ArrayList<ServerMessage>();
 
     public Server(int port) throws IOException {
-        res = new ServerResourceManager("server-data");
+        res = new ServerResourceManager("ServerData");
         System.out.println("Starting server on port " + port + "...");
         serverSocket = new ServerSocket(port);
         connections = new ArrayList<Socket>();
@@ -114,16 +114,18 @@ public class Server {
             if (usernameExists(username)) {
                 writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + "Username already exists");
                 writer.flush();
-                writer.close();
-                reader.close();
                 socket.close();
                 return;
             }
             if (!username.matches("^[a-zA-Z0-9]{1,16}$")) {
                 writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + "Username does not match format");
                 writer.flush();
-                writer.close();
-                reader.close();
+                socket.close();
+                return;
+            }
+            if (res.getBannedUsers().contains(socket.getInetAddress())) {
+                writer.println(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + "User is banned");
+                writer.flush();
                 socket.close();
                 return;
             }
@@ -236,7 +238,7 @@ public class Server {
                 break;
             }
             if (input.equals("help")) {
-                System.out.println("Commands: stop, help, list_users, broadcast, ping");
+                System.out.println("Commands: stop, help, list_users, broadcast <message>, ping, ban <user/address>, unban <address> list_bans");
                 continue;
             }
             if (input.equals("list_users")) {
@@ -279,6 +281,53 @@ public class Server {
                     continue;
                 }
             }
+            if (input.startsWith("ban ")) {
+                String commandArg = input.substring("ban ".length());
+                try {
+                    InetAddress address = InetAddress.getByName(commandArg);
+                    System.out.printf("Banning any user with address %s\n", address);
+                    if (!server.getResourceManager().addBannedUser(address)) {
+                        System.out.println("Error banning user with address" + address);
+                    }
+                } catch (Exception e) {
+                    ServerUser user = null;
+                    for (ServerUser userAll : server.getConnectedUsers()) {
+                        if (userAll.username.equals(commandArg)) {
+                            user = userAll;
+                            break;
+                        }
+                    }
+                    if (user == null) {
+                        System.out.printf("%s could not be recognized; not banning\n", commandArg);
+                        continue;
+                    }
+                    System.out.printf("Banning user %s with address %s\n", user.username, user.socket.getInetAddress());
+                    if (!server.getResourceManager().addBannedUser(user.socket.getInetAddress())) {
+                        System.out.println("Error banning user " + user.username);
+                        continue;
+                    }
+                    user.writer.println(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BANNED_CODE);
+                    user.writer.flush();
+                    user.socket.close();
+                    server.getConnectedUsers().remove(user);
+                    server.broadcastMessage("Server has banned user " + user.username);
+                }
+                continue;
+            }
+            if (input.startsWith("unban ")) {
+                String commandArg = input.substring("unban ".length());
+                try {
+                    InetAddress address = InetAddress.getByName(commandArg);
+                    server.getResourceManager().removeBannedUser(address);
+                } catch (Exception e) {
+                    System.out.println("Could not recognize address: " + commandArg);
+                }
+                continue;
+            }
+            if (input.equals("list_bans")) {
+                System.out.println("Banned users: " + server.getResourceManager().getBannedUsers());
+                continue;
+            }
         }
         for (ServerUser user : server.connectedUsers) {
             user.writer.println(ServerDataCodes.UPDATE_CODE + ServerDataCodes.SERVER_SHUTDOWN_CODE);
@@ -291,6 +340,7 @@ public class Server {
         }
         connectionListenerThread.join();
         pingThread.join();
+        server.getResourceManager().writeOut();
     }
 
     public ServerResourceManager getResourceManager() {

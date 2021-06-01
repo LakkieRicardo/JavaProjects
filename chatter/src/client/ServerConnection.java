@@ -32,7 +32,7 @@ public class ServerConnection implements Flushable, Closeable {
         String serverResponse = reader.readLine();
         if (serverResponse.startsWith(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE)) {
             String errorMessage = serverResponse.substring((ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE).length());
-            JOptionPane.showMessageDialog(null, "Invalid username: " + errorMessage);
+            JOptionPane.showMessageDialog(null, "Failed to connect to server: " + errorMessage);
             writer.close();
             reader.close();
             socket.close();
@@ -135,6 +135,11 @@ public class ServerConnection implements Flushable, Closeable {
                 if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE)) {
                     String updateMessage = serverResponse.substring((ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE).length());
                     ClientRender.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(String.format("User %s has disconnected", updateMessage)).toString());
+                }
+                if (serverResponse.equals(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BANNED_CODE)) {
+                    ClientRender.showMessage(Ansi.ansi().fgRed().a("Server has banned you").toString());
+                    close();
+                    System.exit(0);
                 }
             } catch (IOException e) {
                 continue;

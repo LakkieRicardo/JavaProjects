@@ -85,7 +85,6 @@ public class Client {
         CommandManager.initCommands();
         Client client = new Client(details);
         if (client.getServer().isClosed()) {
-            System.out.println("Failed to connect to server with username " + details.username);
             System.exit(2);
         }
         if (client.server == null && !cliInput) {

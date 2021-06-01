@@ -20,6 +20,8 @@ public class ServerDataCodes {
 
     public static final String SERVER_SHUTDOWN_CODE = "sd";
 
+    public static final String BANNED_CODE = "bn";
+
     // Response code data types
 
     public static final String RESPONSE_OK_CODE = "ok";
