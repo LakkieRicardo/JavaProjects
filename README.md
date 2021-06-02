@@ -68,3 +68,21 @@ D W Q R X E L G I Q
 Crossword generates a random crossword with a specified size, in number of rows and columns, and allows you to specify which words to add, or pick a certain amount of random words.
 
 Usage is through a command line interface, you can also save to a file, which follows the [INI format]([https://link](https://en.wikipedia.org/wiki/INI_file)).
+
+
+--------------------------------
+
+
+## Pong
+
+Ah, the classic game of pong. Super easy run, just double click on `pong.jar` or run:
+
+```sh
+java -jar pong.jar
+```
+
+In the same directory as the pong jar.
+
+This does not include any special AI, or special effects. Just a normal pong game!
+
+(No, I'm not lying)
