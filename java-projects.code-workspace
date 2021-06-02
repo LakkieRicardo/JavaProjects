@@ -8,6 +8,9 @@
 		},
 		{
 			"path": "pong"
+		},
+		{
+			"path": "snake"
 		}
 	],
 	"settings": {

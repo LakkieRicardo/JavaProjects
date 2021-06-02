@@ -86,3 +86,17 @@ In the same directory as the pong jar.
 This does not include any special AI, or special effects. Just a normal pong game!
 
 (No, I'm not lying)
+
+
+--------------------------------
+
+
+## Snake
+
+Simple snake game. Settings are editable in `GameSettings.java`
+
+To run, double click on the `.jar` or run the following command:
+
+```sh
+java -jar snake.jar
+```
