@@ -40,12 +40,12 @@ public class GameSnake implements KeyListener {
     }
 
     public void resetState() {
-        snakePieces = new Vector2i[] { new Vector2i(GameSettings.GRID_WIDTH / 2, GameSettings.GRID_HEIGHT / 2) };
-        fruit = Vector2i.random(GameSettings.RANDOM, new Vector2i(GameSettings.GRID_WIDTH, GameSettings.GRID_HEIGHT));
+        snakePieces = new Vector2i[] { GameSettings.GRID_SIZE.divide(new Vector2i(2, 2)) };
+        fruit = Vector2i.random(GameSettings.RANDOM, GameSettings.GRID_SIZE);
     }
 
     public void eatFruit() {
-        fruit = Vector2i.random(GameSettings.RANDOM, new Vector2i(GameSettings.GRID_WIDTH, GameSettings.GRID_HEIGHT));
+        fruit = Vector2i.random(GameSettings.RANDOM, GameSettings.GRID_SIZE);
         addNewPieces(5);
     }
 
