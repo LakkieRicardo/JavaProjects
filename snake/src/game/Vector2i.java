@@ -24,6 +24,14 @@ public class Vector2i {
         return new Vector2i(x - other.x, y - other.y);
     }
 
+    public Vector2i multiply(Vector2i other) {
+        return new Vector2i(x * other.x, y * other.y);
+    }
+
+    public Vector2i divide(Vector2i other) {
+        return new Vector2i(x / other.x, y / other.y);
+    }
+
     public boolean equals(Object obj) {
         if (obj instanceof Vector2i) {
             Vector2i vec = (Vector2i) obj;
