@@ -1,0 +1,89 @@
+Client Messages:
+
+Whenever a user connects normally
+
+	Client: 			c2/CONNECT username
+	Server -> Client: 	c2/ACKNOWLEDGE server name - may send c2/ERROR if invalid format
+
+If a user tries to connect and fails for any reason
+
+	Client: 			c2/CONNECT username
+	Server -> Client: 	c2/ERROR error message
+
+Whenever a user sends message*
+
+	Client: 			c2/MSG example message
+	Server -> Everyone: c2/MSG username; example message
+
+Whenever a user sends a query*
+
+	Client:				c2/QUERY commandname; arg0; arg1; arg2; ...
+	Server -> Client:	c2/ACKNOWLEDGE response string
+
+When a user updates one of their properties*
+
+	Server -> Everyone:	c2/UPDATE username; property_name; property value
+
+	Provided properties are:
+		username: String
+
+Whenever a user disconnects*
+
+	Client: 			c2/DISCONNECT
+	Server -> Client:	c2/ACKNOWLEDGE
+	Server -> Everyone: c2/DISCONNECT disconnect; username
+
+Whenever a user's connection is lost
+
+	Server -> Everyone:	c2/DISCONNECT lost_connection; username
+
+Whenever a user is banned while connected
+
+	Server -> Everyone: c2/DISCONNECT ban; username; ban message
+
+*Requires connected state
+
+-----
+
+
+Listing server. These requests are made using HTTP/1.1(will be upgraded to HTTPS later), following a RESTful API model.
+
+Whenever a new server is started
+
+	Server -> Listing: 	POST request sent to the URL: api.listingserver.com/servers/server-id
+	Listing -> Server: 	Content body is the authorization key to use when updating info about the server. Status 201 if successful, status 400 if the listing server was unable to ping the target server, or if the server name did not match required formats
+
+When a server shuts down
+
+	Server -> Listing:	DELETE request to URL: api.listingserver.com/servers/server-id, authorization key specified as "C2Listing <key>" in Authorization header
+	Listing -> Server:	Empty content body, status 200 if successfully deleted, status 400 if the server is not in the listing, status 401 if authorization token cannot be used for this server/is invalid
+
+Retrieves all of the current servers and their data
+
+	Server -> Listing: GET request to api.listingserver.com/servers
+	Listing -> Server: Content body with JSON: { servers: [ ... ]}. Each individual server is modeled as: { id: 0, displayName: "display name", address: "127.0.0.1:5000" }
+
+When a server wants to update information
+
+	Server -> Listing: PUT request to api.listingserver.com/servers/server-id with content body of all the properties that should be set. Properties that are not specified will not be updated. Authorization key must be provided for this server
+	Listing -> Server: Empty content body. Status 200 if successfully updated, status 401 if authorization token is invalid, status 400 if the information is invalid, whether that be the key or the value.
+
+	Possible properties are:
+		serverName: String (default: "Chatter Server")
+		address: String (default: origin IP on port 5000)
+		connectedUsers: Number (default: 0)
+		maxUsers: Number (default: 50)
+
+
+-----
+
+
+When anybody needs to ping a server
+
+	Origin -> Server:	c2/PING timestamp_ms
+	Server -> Origin:	c2/PING timestamp_ms; server_id
+
+	or...
+
+	Origin -> Server:	c2/PING
+	Server -> Origin:	c2/PING server_id

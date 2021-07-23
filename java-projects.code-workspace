@@ -11,10 +11,14 @@
 		},
 		{
 			"path": "snake"
+		},
+		{
+			"path": "chatter-2"
 		}
 	],
 	"settings": {
 		"java.dependency.packagePresentation": "hierarchical",
-		"java.configuration.updateBuildConfiguration": "automatic"
+		"java.configuration.updateBuildConfiguration": "automatic",
+		"git.ignoreLimitWarning": true
 	}
 }
