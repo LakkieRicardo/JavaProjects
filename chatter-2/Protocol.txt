@@ -1,3 +1,5 @@
+For reference, a "message" refers to a message sent through the WebSocket connection. A "chat message" is an actual message sent to the server via the "MSG" message type.
+
 Client Messages:
 
 Whenever a user connects normally
@@ -12,13 +14,18 @@ If a user tries to connect and fails for any reason
 
 Whenever a user sends message*
 
-	Client: 			c2/MSG example message
-	Server -> Everyone: c2/MSG username; example message
+	Client: 			c2/MSG timestamp; example message
+	Server -> Everyone: c2/MSG username; timestamp; example message
+
+	Note: The format for the "MSG" message is unique in that any semicolons after the timestamp will be ignored. That is, all text after the timestamp will be treated as 1 argument even if there is a semicolon 
 
 Whenever a user sends a query*
 
 	Client:				c2/QUERY commandname; arg0; arg1; arg2; ...
 	Server -> Client:	c2/ACKNOWLEDGE response string
+
+	Available queries:
+		active_users: Array of usernames(strings)
 
 When a user updates one of their properties*
 
@@ -30,7 +37,6 @@ When a user updates one of their properties*
 Whenever a user disconnects*
 
 	Client: 			c2/DISCONNECT
-	Server -> Client:	c2/ACKNOWLEDGE
 	Server -> Everyone: c2/DISCONNECT disconnect; username
 
 Whenever a user's connection is lost

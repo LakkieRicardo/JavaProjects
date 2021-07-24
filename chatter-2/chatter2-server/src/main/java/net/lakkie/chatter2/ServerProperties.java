@@ -5,6 +5,7 @@ public class ServerProperties {
     public static final int MIN_USERNAME_LENGTH = 1, MAX_USERNAME_LENGTH = 16;
     public static final int MAX_CONNECTIONS = 50;
     public static final String[] ILLEGAL_USERNAME_STRINGS = new String[] { ";" };
+    public static final int MAX_MESSAGE_LENGTH = 2048;
 
     private ServerProperties() { }
 

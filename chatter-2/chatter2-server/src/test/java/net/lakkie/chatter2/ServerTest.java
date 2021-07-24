@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 
 import org.junit.Test;
 
+import net.lakkie.chatter2.ServerUser.ServerUserState;
+
 public class ServerTest {
     
     public static final String TEST_SERVER_NAME = "TestServer";
@@ -46,9 +48,9 @@ public class ServerTest {
     {
         createServer();
         String message = "c2/QUERY ping; true";
-        String messageType = server.parseMessageType(message);
-        String messageContent = server.parseMessageContent(messageType, message);
-        String[] messageArgs = server.parseMessageArguments(messageContent);
+        String messageType = ClientMessage.parseMessageType(message);
+        String messageContent = ClientMessage.parseMessageContent(messageType, message);
+        String[] messageArgs = ClientMessage.parseMessageArguments(messageContent);
         assertEquals("QUERY", messageType);
         assertEquals("ping; true", messageContent);
         assertArrayEquals(new String[] { "ping", "true" }, messageArgs);
@@ -58,7 +60,8 @@ public class ServerTest {
     public void testUserConnect()
     {
         createDummy();
-        server.handleUserConnection(dummy, new ClientMessage("CONNECT", "Dummy", server));
+        dummy.state = ServerUserState.CONNECTING;
+        server.handleMessage(dummy, new ClientMessage("CONNECT", "Dummy"));
         assertEquals("c2/ACKNOWLEDGE " + server.serverName, dummy.getLastMessage());
     }
 
@@ -66,15 +69,16 @@ public class ServerTest {
     public void testUserDisconnect()
     {
         createDummy();
-        server.handleUserDisconnect(dummy, new ClientMessage("DISCONNECT", "", server), "disconnect");
-        assertEquals("c2/ACKNOWLEDGE", dummy.getLastMessage());
+        dummy.state = ServerUserState.CONNECTED;
+        server.handleMessage(dummy, new ClientMessage("DISCONNECT", ""));
+        assertEquals(ServerUserState.DISCONNECTED, dummy.state);
     }
 
     @Test
     public void testUserPing()
     {
         createDummy();
-        server.handleUserPing(dummy, new ClientMessage("PING", "", server));
+        server.handleMessage(dummy, new ClientMessage("PING", ""));
         assertEquals("c2/PING " + server.serverID, dummy.getLastMessage());
     }
 

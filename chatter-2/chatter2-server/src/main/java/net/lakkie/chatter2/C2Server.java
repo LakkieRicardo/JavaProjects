@@ -1,7 +1,9 @@
 package net.lakkie.chatter2;
 
 import java.net.InetSocketAddress;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import org.java_websocket.WebSocket;
@@ -13,6 +15,7 @@ import net.lakkie.chatter2.ServerUser.ServerUserState;
 public class C2Server extends WebSocketServer {
 
     public final Map<WebSocket, ServerUser> connectedUsers = new HashMap<WebSocket, ServerUser>();
+    public final List<ChatMessage> messageHistory = new ArrayList<ChatMessage>(100);
 
     public final int serverID;
     public String serverName;
@@ -24,6 +27,29 @@ public class C2Server extends WebSocketServer {
         this.serverName = serverName;
     }
 
+    /**
+     * Handles a MSG request.
+     * @param user The user sending the chat message. Must be in <code>CONNECTED</code> state.
+     * @param timestamp User-sent timestamp of the chat message
+     * @param message Contents of the chat message
+     */
+    public void handleUserMessage(ServerUser user, long timestamp, String message)
+    {
+        if (message.length() <= ServerProperties.MAX_MESSAGE_LENGTH)
+        {
+            ChatMessage chatMessage = new ChatMessage(user, message, timestamp);
+            messageHistory.add(chatMessage);
+            broadcast(new ClientMessage("MSG", user.username + "; " + timestamp + "; " + message).toString());
+        }
+        else
+            user.conn.send(new ClientMessage("ERROR", "Message is above max length").toString());
+    }
+
+    /**
+     * Handles a CONNECT message
+     * @param user The connection attempting to request to CONNECT. Must be in <code>CONNECTING</code> state
+     * @param message An object containing the client message. Request will be rejected if a valid username is not specified
+     */
     public void handleUserConnection(ServerUser user, ClientMessage message)
     {
         if (message.args.length == 1)
@@ -31,31 +57,36 @@ public class C2Server extends WebSocketServer {
             String providedUsername = message.args[0];
             if (providedUsername.length() < ServerProperties.MIN_USERNAME_LENGTH || providedUsername.length() > ServerProperties.MAX_USERNAME_LENGTH)
             {
-                user.conn.send(new ClientMessage("ERROR", "Invalid username length", this).toString());
+                user.conn.send(new ClientMessage("ERROR", "Invalid username length").toString());
                 return;
             }
             for (String illegalUsernameString : ServerProperties.ILLEGAL_USERNAME_STRINGS)
             {
                 if (providedUsername.contains(illegalUsernameString)) // check if contains string
                 {
-                    user.conn.send(new ClientMessage("ERROR", "Username contains illegal string", this).toString());
+                    user.conn.send(new ClientMessage("ERROR", "Username contains illegal string").toString());
                     return;
                 }
             }
             user.username = providedUsername;
             user.state = ServerUserState.CONNECTED;
-            user.conn.send(new ClientMessage("ACKNOWLEDGE", serverName, this).toString());
+            user.conn.send(new ClientMessage("ACKNOWLEDGE", serverName).toString());
         }
         else
-            user.conn.send(new ClientMessage("ERROR", "Invalid connect command!", this).toString());
+            user.conn.send(new ClientMessage("ERROR", "Invalid connect command!").toString());
     }
 
+    /**
+     * Handles a PING request. User can be in any state for this
+     * @param user User sending the request
+     * @param message Contents of the request
+     */
     public void handleUserPing(ServerUser user, ClientMessage message)
     {
         if (message.args.length == 0)
         {
             user.timeOfLastPing = System.currentTimeMillis();
-            user.conn.send(new ClientMessage("PING", "" + serverID, this).toString());
+            user.conn.send(new ClientMessage("PING", "" + serverID).toString());
         }
         else if (message.args.length == 1)
         {
@@ -65,26 +96,39 @@ public class C2Server extends WebSocketServer {
                 long currentTime = System.currentTimeMillis();
                 user.timeOfLastPing = currentTime;
                 user.lastPingTime = currentTime - timestamp;
-                user.conn.send(new ClientMessage("PING", currentTime + "; " + serverID, this).toString());
+                user.conn.send(new ClientMessage("PING", currentTime + "; " + serverID).toString());
             } catch (NumberFormatException e)
             {
-                user.conn.send(new ClientMessage("ERROR", "Invalid timestamp!", this).toString());
+                user.conn.send(new ClientMessage("ERROR", "Invalid timestamp!").toString());
             }
         }
     }
 
+    /**
+     * Handles a DISCONNECT request
+     * @param user User sending the request. Must be in <code>CONNECTED</code> state, unless <code>disconnectType</code> is <code>lost_connection</code>, in which case the user can be <code>null</code>.
+     * @param message Contents of the message
+     * @param disconnectType Type of disconnect. Can be one of the following:
+     * <ul>
+     *  <li><code>disconnect</code> - When a user normally disconnects</li>
+     *  <li><code>lost_connection</code> - When a user suddenly disconnects</li>
+     *  <li><code>ban</code> - When a user has been banned by the server and must be disconnected</li>
+     * </ul>
+     */
     public void handleUserDisconnect(ServerUser user, ClientMessage message, String disconnectType)
     {
-        user.state = ServerUserState.DISCONNECTED;
-        user.conn.send(new ClientMessage("ACKNOWLEDGE", "", new String[0]).toString());
+        if (user != null)
+        {
+            user.state = ServerUserState.DISCONNECTED;
+        }
         broadcast("c2/DISCONNECT " + disconnectType + "; " + user.username);
     }
 
-    public void handleSuddenDisconnect(ServerUser user)
-    {
-        broadcast("c2/DISCONNECT lost_connection; " + user.username);
-    }
-
+    /**
+     * Handles any message sent by the server. Message will be sent to appropriate methods depending on the type
+     * @param user User who sent the message
+     * @param message Contents of the message
+     */
     public void handleMessage(ServerUser user, ClientMessage message)
     {
         if (message.type.equals("CONNECT"))
@@ -92,7 +136,7 @@ public class C2Server extends WebSocketServer {
             if (user.state == ServerUserState.CONNECTING)
                 handleUserConnection(user, message);
             else
-                user.conn.send(new ClientMessage("ERROR", "Connect command must be sent!", this).toString());
+                user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send CONNECT message!").toString());
         }
         else if (message.type.equals("DISCONNECT"))
         {
@@ -101,49 +145,12 @@ public class C2Server extends WebSocketServer {
             else if (user.state == ServerUserState.CONNECTING)
                 user.state = ServerUserState.DISCONNECTED; // If never connected, do not broadcast to all users
             else
-                user.conn.send(new ClientMessage("ERROR", "Cannot disconnect when not connected", this).toString());
+                user.conn.send(new ClientMessage("ERROR", "Cannot disconnect when not connected").toString());
         }
         else if (message.type.equals("PING"))
         {
             handleUserPing(user, message);
         }
-    }
-    
-    public String parseMessageType(String message)
-    {
-        int messageTypeBegin = "c2/".length(), messageTypeEnd = message.indexOf(" ");
-        return message.substring(messageTypeBegin, messageTypeEnd);
-    }
-
-    public String parseMessageContent(String message)
-    {
-        return parseMessageContent(parseMessageType(message), message);
-    }
-
-    public String parseMessageContent(String messageType, String message)
-    {
-        int contentIndex = "c2/".length() + messageType.length() + 1; // 1 for the space between type and content
-        if (contentIndex >= message.length())
-            return "";
-        return message.substring(contentIndex);
-    }
-
-    public String[] parseMessageArguments(String messageContent)
-    {
-        if (messageContent.isEmpty())
-            return new String[0];
-        if (!messageContent.contains("; "))
-            return new String[] { messageContent };
-        String[] args = messageContent.split("; ");
-        return args;
-    }
-
-    public ClientMessage parseMessage(String message)
-    {
-        String type = parseMessageType(message);
-        String content = parseMessageContent(type, message);
-        String[] args = parseMessageArguments(content);
-        return new ClientMessage(type, content, args);
     }
 
     @Override
@@ -151,6 +158,7 @@ public class C2Server extends WebSocketServer {
     {
         ServerUser user = new ServerUser();
         user.conn = conn;
+        user.state = ServerUserState.CONNECTING;
         connectedUsers.put(conn, user);
     }
 
@@ -162,7 +170,7 @@ public class C2Server extends WebSocketServer {
         ServerUser user = connectedUsers.get(conn);
         if (user.state != ServerUserState.DISCONNECTED)
         {
-            handleSuddenDisconnect(user);
+            handleUserDisconnect(user, null, "lost_connection");
         }
         connectedUsers.remove(conn);
     }
@@ -174,7 +182,7 @@ public class C2Server extends WebSocketServer {
         ServerUser user = connectedUsers.get(conn);
         if (user.state != ServerUserState.CONNECTED && user.state != ServerUserState.CONNECTING)
         {
-            conn.send(new ClientMessage("ERROR", "You have been disconnected from the server", this).toString());
+            conn.send(new ClientMessage("ERROR", "You have been disconnected from the server").toString());
             return;
         }
         if (!message.startsWith("c2/"))
@@ -183,7 +191,23 @@ public class C2Server extends WebSocketServer {
             return;
         }
         
-        handleMessage(user, parseMessage(message));
+        if (message.startsWith("c2/MSG"))
+        {
+            String timestamp = message.substring("c2/MSG ".length(), message.indexOf("; "));
+            try
+            {
+                long timestampL = Long.parseLong(timestamp);
+                String chatMessageValue = message.substring(message.indexOf("; ") + "; ".length());
+                handleUserMessage(user, timestampL, chatMessageValue);
+            }
+            catch (NumberFormatException e)
+            {
+                conn.send(new ClientMessage("ERROR", "Invalid timestamp").toString());
+            }
+        }
+        else
+            handleMessage(user, ClientMessage.parseMessage(message));
+
     }
 
     @Override
