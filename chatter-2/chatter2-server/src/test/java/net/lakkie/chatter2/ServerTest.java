@@ -3,7 +3,6 @@ package net.lakkie.chatter2;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import org.junit.Test;
@@ -65,7 +64,7 @@ public class ServerTest {
         createDummy();
         dummy.state = ServerUserState.CONNECTING;
         server.handleMessage(dummy, new ClientMessage("CONNECT", "Dummy"));
-        assertEquals("c2/ACKNOWLEDGE " + server.serverName, dummy.getLastMessage());
+        assertEquals("c2/ACKNOWLEDGE " + server.serverName, dummy.popLastMessage());
     }
 
     @Test
@@ -82,7 +81,7 @@ public class ServerTest {
     {
         createDummy();
         server.handleMessage(dummy, new ClientMessage("PING", ""));
-        assertEquals("c2/PING " + server.serverID, dummy.getLastMessage());
+        assertEquals("c2/PING " + server.serverID, dummy.popLastMessage());
     }
 
     @Test
@@ -90,7 +89,7 @@ public class ServerTest {
     {
         createDummy();
         server.handleMessage(dummy, new ClientMessage("QUERY", "active_users"));
-        assertEquals("c2/ACKNOWLEDGE [" + dummy.username + "]", dummy.getLastMessage());
+        assertEquals("c2/ACKNOWLEDGE [" + dummy.username + "]", dummy.popLastMessage());
     }
 
     @Test
@@ -108,6 +107,15 @@ public class ServerTest {
         server.handleMessage(dummy, newMessageQuery);
         assertEquals("c2/ACKNOWLEDGE", dummy.getMessages().pop()); // Acknowledge for initial message sent
         assertEquals("c2/ACKNOWLEDGE", dummy.getMessages().pop()); // Acknowledge for message update
+    }
+
+    @Test
+    public void testUpdateUsername()
+    {
+        createDummy();
+        dummy.state = ServerUserState.CONNECTED;
+        server.handleMessage(dummy, new ClientMessage("UPDATE", "username; NewDummyName"));
+        assertEquals("c2/ACKNOWLEDGE", dummy.popLastMessage());
     }
 
 }

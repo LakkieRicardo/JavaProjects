@@ -36,7 +36,8 @@ Whenever a user sends a query*
 
 When a user updates one of their properties*
 
-	Client -> Server: c2/UPDATE username; property_name; property value
+	Client -> Server: c2/UPDATE property_name; property value
+	Server -> Client: c2/ACKNOWLEDGE
 	Server -> Everyone:	c2/UPDATE username; property_name; property value
 
 	Provided properties are:

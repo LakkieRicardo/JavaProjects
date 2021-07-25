@@ -32,6 +32,44 @@ public class C2Server extends WebSocketServer {
         this.serverName = serverName;
     }
 
+    public void handleUpdateUsernameRequest(ServerUser user, String propertyValue)
+    {
+        if (propertyValue.length() <= ServerProperties.MAX_USERNAME_LENGTH)
+            {
+                for (String illegalString : ServerProperties.ILLEGAL_USERNAME_STRINGS)
+                {
+                    if (propertyValue.contains(illegalString))
+                    {
+                        user.conn.send(new ClientMessage("ERROR", "Username contains illegal string").toString());
+                        return;
+                    }
+                }
+                user.username = propertyValue;
+
+                user.conn.send(new ClientMessage("ACKNOWLEDGE", "").toString());
+                broadcast(new ClientMessage("UPDATE", user.username + "; username; " + propertyValue).toString());
+            }
+            else
+                user.conn.send(new ClientMessage("ERROR", "Username is too long in length").toString());
+    }
+
+    public void handleUpdateRequest(ServerUser user, ClientMessage message)
+    {
+        if (message.args.length == 2)
+        {
+            String propertyName = message.args[0];
+            String propertyValue = message.args[1];
+            if (propertyName.equals("username"))
+            {
+                handleUpdateUsernameRequest(user, propertyValue);
+            }
+            else
+                user.conn.send(new ClientMessage("ERROR", "Specified property name is invalid").toString());
+        }
+        else
+            user.conn.send(new ClientMessage("ERROR", "Invalid arguments specified").toString());
+    }
+
     public void handleActiveUsersQuery(ServerUser user, ClientMessage message)
     {
         StringBuilder userList = new StringBuilder();
@@ -71,6 +109,11 @@ public class C2Server extends WebSocketServer {
             user.conn.send(new ClientMessage("ERROR", "Invalid arguments for update_message query").toString());
     }
 
+    /**
+     * Handles a QUERY request.
+     * @param user User sending the chat message. Must be in <code>CONNECTED</code> state.
+     * @param message Message sent by user
+     */
     public void handleQuery(ServerUser user, ClientMessage message)
     {
         if (message.args.length >= 1)
@@ -210,7 +253,7 @@ public class C2Server extends WebSocketServer {
             else if (user.state == ServerUserState.CONNECTING)
                 user.state = ServerUserState.DISCONNECTED; // If never connected, do not broadcast to all users
             else
-                user.conn.send(new ClientMessage("ERROR", "Cannot disconnect when not connected").toString());
+                user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send DISCONNECT message!").toString());
         }
         else if (message.type.equals("PING"))
         {
@@ -238,7 +281,16 @@ public class C2Server extends WebSocketServer {
                 }
             }
             else
-                user.conn.send(new ClientMessage("ERROR", "Must be connected to send a message").toString());
+                user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send MSG message!").toString());
+        }
+        else if (message.type.equals("UPDATE"))
+        {
+            if (user.state == ServerUserState.CONNECTED)
+            {
+                handleUpdateRequest(user, message);
+            }
+            else
+                user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send UPDATE message!").toString());
         }
     }
 

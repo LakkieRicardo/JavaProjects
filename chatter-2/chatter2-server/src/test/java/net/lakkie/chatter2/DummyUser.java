@@ -110,6 +110,10 @@ public class DummyUser extends ServerUser {
         return messages.peek();
     }
 
+    public String popLastMessage() {
+        return messages.pop();
+    }
+
     public Stack<String> getMessages() {
         return messages;
     }
