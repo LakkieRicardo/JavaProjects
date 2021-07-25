@@ -1,10 +1,10 @@
 package net.lakkie.chatter2;
 
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.UUID;
 
 import org.java_websocket.WebSocket;
 import org.java_websocket.handshake.ClientHandshake;
@@ -15,7 +15,12 @@ import net.lakkie.chatter2.ServerUser.ServerUserState;
 public class C2Server extends WebSocketServer {
 
     public final Map<WebSocket, ServerUser> connectedUsers = new HashMap<WebSocket, ServerUser>();
-    public final List<ChatMessage> messageHistory = new ArrayList<ChatMessage>(100);
+    public final Map<UUID, ChatMessage> messageHistory = new LinkedHashMap<UUID, ChatMessage>();
+
+    /**
+     * UUID of the last message sent used for debugging purposes
+     */
+    private UUID lastMessageSentUUID = null;
 
     public final int serverID;
     public String serverName;
@@ -27,19 +32,79 @@ public class C2Server extends WebSocketServer {
         this.serverName = serverName;
     }
 
+    public void handleActiveUsersQuery(ServerUser user, ClientMessage message)
+    {
+        StringBuilder userList = new StringBuilder();
+        userList.append('[');
+        int i = 0;
+        for (ServerUser itUser : connectedUsers.values())
+        {
+            if (i++ == 0)
+                userList.append(itUser.username);
+            else
+                userList.append(',').append(itUser.username);
+        }
+        userList.append(']');
+        user.conn.send(new ClientMessage("ACKNOWLEDGE", new String(userList)).toString());
+    }
+
+    public void handleUpdateMessageQuery(ServerUser user, ClientMessage message)
+    {
+        if (message.args.length >= 3)
+        {
+            try
+            {
+                UUID msgUuid = UUID.fromString(message.args[1]); // Throws an exception if invalid format
+                if (!messageHistory.containsKey(msgUuid)) throw new Exception();
+                ChatMessage chatMessage = messageHistory.get(msgUuid);
+                chatMessage.value = message.getOriginalMessage().substring(("c2/QUERY update_message; " + msgUuid.toString() + "; ").length());
+                user.conn.send(new ClientMessage("ACKNOWLEDGE", "").toString());
+                broadcast(new ClientMessage("MSG", chatMessage.sender.username + "; " + chatMessage.timestamp + "; " + msgUuid.toString() + "; " + chatMessage.value).toString()); // Broadcast updated message to all users
+            }
+            catch (Exception e)
+            {
+                user.conn.send(new ClientMessage("ERROR", "Invalid message UUID specified").toString());
+            }
+            
+        }
+        else
+            user.conn.send(new ClientMessage("ERROR", "Invalid arguments for update_message query").toString());
+    }
+
+    public void handleQuery(ServerUser user, ClientMessage message)
+    {
+        if (message.args.length >= 1)
+        {
+            String queryType = message.args[0];
+            if (queryType.equals("active_users"))
+            {
+                handleActiveUsersQuery(user, message);
+            }
+            else if (queryType.equals("update_message"))
+            {
+                handleUpdateMessageQuery(user, message);
+            }
+        }
+        else
+            user.conn.send(new ClientMessage("ERROR", "No query specified").toString());
+    }
+
     /**
      * Handles a MSG request.
      * @param user The user sending the chat message. Must be in <code>CONNECTED</code> state.
      * @param timestamp User-sent timestamp of the chat message
      * @param message Contents of the chat message
      */
-    public void handleUserMessage(ServerUser user, long timestamp, String message)
+    public void handleChatMessage(ServerUser user, long timestamp, String message)
     {
         if (message.length() <= ServerProperties.MAX_MESSAGE_LENGTH)
         {
             ChatMessage chatMessage = new ChatMessage(user, message, timestamp);
-            messageHistory.add(chatMessage);
-            broadcast(new ClientMessage("MSG", user.username + "; " + timestamp + "; " + message).toString());
+            UUID messageID = UUID.randomUUID();
+            messageHistory.put(messageID, chatMessage);
+            broadcast(new ClientMessage("MSG", user.username + "; " + timestamp + "; " + messageID + "; " + message).toString());
+            lastMessageSentUUID = messageID;
+            user.conn.send(new ClientMessage("ACKNOWLEDGE", "").toString());
         }
         else
             user.conn.send(new ClientMessage("ERROR", "Message is above max length").toString());
@@ -151,6 +216,30 @@ public class C2Server extends WebSocketServer {
         {
             handleUserPing(user, message);
         }
+        else if (message.type.equals("QUERY"))
+        {
+            handleQuery(user, message);
+        }
+        else if (message.type.equals("MSG"))
+        {
+            if (user.state == ServerUserState.CONNECTED)
+            {
+                String originalMessage = message.getOriginalMessage();
+                String timestamp = originalMessage.substring("c2/MSG ".length(), originalMessage.indexOf("; "));
+                try
+                {
+                    long timestampL = Long.parseLong(timestamp);
+                    String chatMessageValue = originalMessage.substring(originalMessage.indexOf("; ") + "; ".length());
+                    handleChatMessage(user, timestampL, chatMessageValue);
+                }
+                catch (NumberFormatException e)
+                {
+                    user.conn.send(new ClientMessage("ERROR", "Invalid timestamp").toString());
+                }
+            }
+            else
+                user.conn.send(new ClientMessage("ERROR", "Must be connected to send a message").toString());
+        }
     }
 
     @Override
@@ -191,23 +280,7 @@ public class C2Server extends WebSocketServer {
             return;
         }
         
-        if (message.startsWith("c2/MSG"))
-        {
-            String timestamp = message.substring("c2/MSG ".length(), message.indexOf("; "));
-            try
-            {
-                long timestampL = Long.parseLong(timestamp);
-                String chatMessageValue = message.substring(message.indexOf("; ") + "; ".length());
-                handleUserMessage(user, timestampL, chatMessageValue);
-            }
-            catch (NumberFormatException e)
-            {
-                conn.send(new ClientMessage("ERROR", "Invalid timestamp").toString());
-            }
-        }
-        else
-            handleMessage(user, ClientMessage.parseMessage(message));
-
+        handleMessage(user, ClientMessage.parseMessage(message));
     }
 
     @Override
@@ -220,6 +293,10 @@ public class C2Server extends WebSocketServer {
     public void onStart()
     {
         System.out.println("Started server on port " + getPort() + " with ID " + serverID + " and display name \"" + serverName + "\"");
+    }
+
+    public UUID getLastMessageSentUUID() {
+        return lastMessageSentUUID;
     }
 
 }

@@ -44,10 +44,16 @@ public class DummyUser extends ServerUser {
             public void send(byte[] bytes) { send(new String(bytes)); }
 
             @Override
-            public void sendFrame(Framedata framedata) { }
+            public void sendFrame(Framedata framedata) {
+                messages.push(new String(framedata.getPayloadData().array()));
+            }
 
             @Override
-            public void sendFrame(Collection<Framedata> frames) { }
+            public void sendFrame(Collection<Framedata> frames) {
+                for (Framedata framedata : frames) {
+                    messages.push(new String(framedata.getPayloadData().array()));
+                }
+            }
 
             @Override
             public void sendPing() { }

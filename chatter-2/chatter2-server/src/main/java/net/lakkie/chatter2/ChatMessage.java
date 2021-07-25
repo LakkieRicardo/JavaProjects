@@ -2,7 +2,7 @@ package net.lakkie.chatter2;
 
 public class ChatMessage {
     
-    private String value;
+    public String value;
     public final ServerUser sender;
     public final long timestamp;
     

@@ -3,12 +3,17 @@ package net.lakkie.chatter2;
 public class ClientMessage {
     public final String type, content;
     public final String[] args;
+    /**
+     * The message this object was parsed from. May or may not be set
+     */
+    private String originalMessage = null;
 
     public ClientMessage(String type, String content, String[] args)
     {
         this.type = type;
         this.content = content;
         this.args = args;
+        this.originalMessage = "c2/" + type + " " + content;
     }
 
     /**
@@ -21,6 +26,7 @@ public class ClientMessage {
         this.type = type;
         this.content = content;
         this.args = parseMessageArguments(content);
+        this.originalMessage = "c2/" + type + " " + content;
     }
 
     @Override
@@ -56,6 +62,11 @@ public class ClientMessage {
         }
     }
 
+    public String getOriginalMessage()
+    {
+        return originalMessage;
+    }
+
     public static String parseMessageType(String message)
     {
         int messageTypeBegin = "c2/".length(), messageTypeEnd = message.indexOf(" ");
@@ -85,12 +96,30 @@ public class ClientMessage {
         return args;
     }
 
-    public static ClientMessage parseMessage(String message)
+    public static ClientMessage parseMessage(String message, int maxArguments) throws MessageArgumentOverflowException
     {
         String type = parseMessageType(message);
         String content = parseMessageContent(type, message);
         String[] args = parseMessageArguments(content);
-        return new ClientMessage(type, content, args);
+        if (maxArguments == -1 ? false : args.length > maxArguments) throw new MessageArgumentOverflowException();
+        ClientMessage clientMessage = new ClientMessage(type, content, args);
+        clientMessage.originalMessage = message;
+        return clientMessage;
     }
+
+    public static ClientMessage parseMessage(String message)
+    {
+        try
+        {
+            return parseMessage(message, -1);
+        }
+        catch (MessageArgumentOverflowException e)
+        {
+            e.printStackTrace(); // Should not happen
+            return null;
+        }
+    }
+
+    public static class MessageArgumentOverflowException extends Exception { }
     
 }

@@ -15,20 +15,28 @@ If a user tries to connect and fails for any reason
 Whenever a user sends message*
 
 	Client: 			c2/MSG timestamp; example message
-	Server -> Everyone: c2/MSG username; timestamp; example message
+	Server -> Client:	c2/ACKNOWLEDGE
+	Server -> Everyone: c2/MSG username; timestamp; message_uuid; example message
 
-	Note: The format for the "MSG" message is unique in that any semicolons after the timestamp will be ignored. That is, all text after the timestamp will be treated as 1 argument even if there is a semicolon 
+	Note: The format for the "MSG" message is unique in that any semicolons after the timestamp will be ignored. That is, all text after the timestamp will be treated as 1 argument even if there is a semicolon
+
+	If a message is being updated, there will be no 
 
 Whenever a user sends a query*
 
 	Client:				c2/QUERY commandname; arg0; arg1; arg2; ...
 	Server -> Client:	c2/ACKNOWLEDGE response string
 
-	Available queries:
-		active_users: Array of usernames(strings)
+	Available queries: (formatted as request; arg0; arg1; ...: response)
+		
+		active_users: c2/ACKNOWLEDGE [username1,username2,username3,...]
+
+		update_message; msg_uuid; new_contents: c2/ACKNOWLEDGE
+		Update message will also 
 
 When a user updates one of their properties*
 
+	Client -> Server: c2/UPDATE username; property_name; property value
 	Server -> Everyone:	c2/UPDATE username; property_name; property value
 
 	Provided properties are:
