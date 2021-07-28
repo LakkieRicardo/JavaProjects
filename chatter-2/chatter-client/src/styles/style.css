@@ -1,0 +1,160 @@
+body {
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100vw;
+    height: 100vh;
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Extra credit to anyone who figures out what website these colors are from */
+
+.app-card {
+    padding: 5px;
+    box-shadow: 0 0 8px #d0d0d0;
+    border: 1px solid rgb(208, 208, 208);
+    background-color: #eee;
+}
+
+/* Chat container classes */
+
+.chat-container {
+    position: fixed;
+    inset: 5%;
+}
+
+@media screen and (max-width: 1000px) {
+    .chat-container {
+        inset: 15px;
+    }
+}
+
+.chat-container h1 span {
+    color: #ccc;
+}
+
+.chat-container h1 {
+    height: 40px;
+}
+
+.message-container {
+    position: absolute;
+    top: calc(40px + 0.67em * 2 + 40px); /* Calculate h1's height and add 40px of margin to it */
+    left: 10px;
+    right: 10px;
+    bottom: 120px;
+    display: flex;
+    flex-direction: column;
+}
+
+.message-entry {
+    line-height: 25px;
+    margin-bottom: 5px;
+}
+
+.message-entry-date {
+    color: #777;
+    vertical-align: middle;
+    margin-right: 5px;
+    font-size: 12px;
+    font-family: 'Courier New', Courier, monospace;
+}
+
+.message-entry-content {
+    font-size: 18px;
+}
+
+.chat-input-container {
+    display: flex;
+    position: absolute;
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    height: 100px;
+    background: red;
+}
+
+.chat-input-container textarea {
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 18px;
+    width: 75%;
+    vertical-align: top;
+    resize: none;
+}
+
+.chat-input-container button {
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Server listing classes */
+
+.server-listing-container {
+    position: fixed;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 5;
+    transition: transform 0.2s cubic-bezier(.35,.8,0,.95);
+    max-width: calc(100% - 50px);
+}
+
+.server-listing-container--hidden {
+    transform: translateX(100%);
+}
+
+.listing-toggle {
+    position: absolute;
+    left: -2px;
+    top: 25px;
+    transform: translateX(-100%);
+    border-radius: 0;
+    border: none;
+    height: 100px;
+    box-shadow: 0 0 8px #d0d0d0;
+    opacity: 0.8;
+    cursor: pointer;
+    z-index: 10;
+}
+
+.standalone-listing-toggle {
+    transform: none;
+    position: fixed;
+    left: auto;
+    right: 0;
+}
+
+.server-listing-container h1 {
+    text-align: center;
+}
+
+div.server-listing {
+    list-style: none;
+    padding-left: 5px;
+    display: flex;
+    flex-direction: column;
+}
+
+div.server-listing div {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    margin: 10px 0;
+}
+
+button.server-listing-item {
+    border-radius: 0;
+    cursor: pointer;
+    padding: 5px;
+    border: 2px solid #009be3;
+    margin-top: 5px;
+}
+
+span.server-listing-item {
+    font-weight: bold;
+}
+
+span.server-listing-item span {
+    font-style: italic;
+    color: #999;
+}
