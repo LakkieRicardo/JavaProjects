@@ -9,7 +9,7 @@ public class App
     {
         if (server != null)
             throw new IllegalStateException("Tried to create server while already running server");
-        server = new C2Server(port, 0, "TestServer"); // TODO add server name and ID options
+        server = new C2Server(port, 0, "TestServer");
         server.start();
     }
 
@@ -17,16 +17,19 @@ public class App
     {
         if (args.length == 0)
         {
-            System.err.println("No port is specified");
-            System.exit(1);
+            System.err.println("Defaulting to port 5001...");
+            CreateServer(5001);
         }
-        try
+        else
         {
-            CreateServer(Integer.parseInt(args[0]));
-        } catch (NumberFormatException e)
-        {
-            System.err.println("Invalid port specified");
-            System.exit(2);
+            try
+            {
+                CreateServer(Integer.parseInt(args[0]));
+            } catch (NumberFormatException e)
+            {
+                System.err.println("Invalid port specified");
+                System.exit(2);
+            }
         }
     }
 }

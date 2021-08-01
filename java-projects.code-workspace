@@ -19,6 +19,7 @@
 	"settings": {
 		"java.dependency.packagePresentation": "hierarchical",
 		"java.configuration.updateBuildConfiguration": "automatic",
-		"git.ignoreLimitWarning": true
+		"git.ignoreLimitWarning": true,
+		"liveServer.settings.multiRootWorkspaceName": "chatter-2"
 	}
 }

@@ -45,16 +45,15 @@ When a user updates one of their properties*
 
 Whenever a user disconnects*
 
-	Client: 			c2/DISCONNECT
-	Server -> Everyone: c2/DISCONNECT disconnect; username
+	Server -> Everyone: c2/QUIT disconnect; username
 
 Whenever a user's connection is lost
 
-	Server -> Everyone:	c2/DISCONNECT lost_connection; username
+	Server -> Everyone:	c2/QUIT lost_connection; username
 
 Whenever a user is banned while connected
 
-	Server -> Everyone: c2/DISCONNECT ban; username; ban message
+	Server -> Everyone: c2/QUIT ban; username; ban message
 
 *Requires connected state
 

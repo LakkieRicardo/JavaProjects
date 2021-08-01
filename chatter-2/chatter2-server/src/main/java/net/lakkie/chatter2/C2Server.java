@@ -223,7 +223,7 @@ public class C2Server extends WebSocketServer {
      *  <li><code>ban</code> - When a user has been banned by the server and must be disconnected</li>
      * </ul>
      */
-    public void handleUserDisconnect(ServerUser user, ClientMessage message, String disconnectType)
+    public void handleUserDisconnect(ServerUser user, String disconnectType)
     {
         if (user != null)
         {
@@ -245,15 +245,6 @@ public class C2Server extends WebSocketServer {
                 handleUserConnection(user, message);
             else
                 user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send CONNECT message!").toString());
-        }
-        else if (message.type.equals("DISCONNECT"))
-        {
-            if (user.state == ServerUserState.CONNECTED)
-                handleUserDisconnect(user, message, "disconnect");
-            else if (user.state == ServerUserState.CONNECTING)
-                user.state = ServerUserState.DISCONNECTED; // If never connected, do not broadcast to all users
-            else
-                user.conn.send(new ClientMessage("ERROR", "Cannot be in state \"" + user.state + "\" and send DISCONNECT message!").toString());
         }
         else if (message.type.equals("PING"))
         {
@@ -306,13 +297,11 @@ public class C2Server extends WebSocketServer {
     @Override
     public void onClose(WebSocket conn, int code, String reason, boolean remote)
     {
-        if (!connectedUsers.containsKey(conn))
-            return;
         ServerUser user = connectedUsers.get(conn);
-        if (user.state != ServerUserState.DISCONNECTED)
-        {
-            handleUserDisconnect(user, null, "lost_connection");
-        }
+        if (user.state == ServerUserState.CONNECTED)
+            handleUserDisconnect(user, "disconnect");
+        else
+            handleUserDisconnect(user, "lost_connection");
         connectedUsers.remove(conn);
     }
 
@@ -338,7 +327,10 @@ public class C2Server extends WebSocketServer {
     @Override
     public void onError(WebSocket conn, Exception ex)
     {
-        System.err.println("Failed to start server on port " + getPort() + ": " + ex.getMessage());
+        if (connectedUsers.containsKey(conn) && connectedUsers.get(conn).state == ServerUserState.CONNECTED)
+            System.err.printf("Exception occurred with user %s: %s\n", connectedUsers.get(conn).username, ex);
+        else
+            System.err.printf("Exception occured with client at address %s: %s\n", conn.getRemoteSocketAddress(), ex);
     }
 
     @Override
