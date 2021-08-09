@@ -72,7 +72,7 @@ public class ServerTest {
     {
         createDummy();
         dummy.state = ServerUserState.CONNECTED;
-        server.handleMessage(dummy, new ClientMessage("DISCONNECT", ""));
+        server.onClose(dummy.conn, 0, null, true);
         assertEquals(ServerUserState.DISCONNECTED, dummy.state);
     }
 
