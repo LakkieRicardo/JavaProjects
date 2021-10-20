@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatter 2 Client</title>
+    <link rel="stylesheet" href="style.css" />
+
+    <script src="main.js" defer></script>
+</head>
+<body>
+    
+    <h1>Connected to <span id="server-name">Server Name</span><span id="server-addr">(Server Address)</span> as <span id="username">Username</span></h1>
+
+    <table>
+        <thead>
+            <tr>
+                <td>Time</td>
+                <td>Message</td>
+            </tr>
+        </thead>
+        <tbody id="message-history-container">
+        </tbody>
+    </table>
+
+    <form id="send-message-form">
+        <input type="text" id="send-message-input" placeholder="Send message to server..." />
+        <input type="submit" value="Send" />
+    </form>
+
+</body>
+</html>
