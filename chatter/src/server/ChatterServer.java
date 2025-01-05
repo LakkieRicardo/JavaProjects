@@ -5,21 +5,23 @@ import java.io.*;
 import java.util.*;
 import util.ServerDataCodes;
 
-public class Server {
+/**
+ * Contains all of the sockets representing client connections and the server socket. Manages resources for listening
+ * to clients, sending messages, and handling client requests.
+ */
+public class ChatterServer {
     
     public final ServerSocket serverSocket;
-    public final List<Socket> connections;
     private final ServerResourceManager res;
 
-    private final List<Thread> clientListenerThreads = new ArrayList<Thread>();
+    private final List<Thread> clientListenerThreads = new ArrayList<Thread>(); // TODO convert this into a thread pool
     private final List<ServerUser> connectedUsers = new ArrayList<ServerUser>();
-    private final List<ServerMessage> messageLog = new ArrayList<ServerMessage>();
+    private final List<ChatterServerMessage> messageLog = new ArrayList<ChatterServerMessage>();
 
-    public Server(int port) throws IOException {
+    public ChatterServer(int port) throws IOException {
         res = new ServerResourceManager("ServerData");
         System.out.println("Starting server on port " + port + "...");
         serverSocket = new ServerSocket(port);
-        connections = new ArrayList<Socket>();
     }
 
     public void listenForConnections() {
@@ -87,7 +89,7 @@ public class Server {
         if (requestData.contains("\n") || requestData.length() == 0) {
             return;
         }
-        messageLog.add(new ServerMessage(user, requestData));
+        messageLog.add(new ChatterServerMessage(user, requestData));
         System.out.println("Received message from " + user.username + ": " + requestData);
         connectedUsers.toString();
         for (ServerUser userAll : connectedUsers) {
@@ -226,7 +228,7 @@ public class Server {
             System.out.print("Enter port : ");
             port = Integer.parseInt(scanner.nextLine());
         }
-        Server server = new Server(port);
+        ChatterServer server = new ChatterServer(port);
         Thread connectionListenerThread = new Thread(server::listenForConnections);
         connectionListenerThread.start();
         Thread pingThread = new Thread(server::pingLoop);

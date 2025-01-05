@@ -11,6 +11,9 @@ import java.util.Scanner;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+/**
+ * Manages local server resources such as JSON files containing server configuration and data. Owned by a <code>ChatterServer</code>.
+ */
 public class ServerResourceManager {
     
     private final File resourceFolder;

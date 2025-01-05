@@ -2,15 +2,15 @@ package client;
 
 import java.net.InetAddress;
 
-public class ConnectionDetails {
+public class ChatterServerConnectionDetails {
 
     public InetAddress host;
     public String username;
     public int port;
 
-    public ConnectionDetails() { this.port = -1;}
+    public ChatterServerConnectionDetails() { this.port = -1;}
 
-    public ConnectionDetails(InetAddress host, int port, String username) {
+    public ChatterServerConnectionDetails(InetAddress host, int port, String username) {
         this.host = host;
         this.port = port;
         this.username = username;

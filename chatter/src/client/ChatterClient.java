@@ -12,13 +12,13 @@ import org.fusesource.jansi.AnsiConsole;
 
 import client.commands.CommandManager;
 
-public class Client {
+public class ChatterClient {
     
-    private ServerConnection server;
+    private ChatterServerConnection server;
 
-    public Client(InetAddress host, int port, String username) {
+    public ChatterClient(InetAddress host, int port, String username) {
         try {
-            server = new ServerConnection(host, port, username);
+            server = new ChatterServerConnection(host, port, username);
             if (server.socket.isClosed()) {
                 return;
             }
@@ -28,11 +28,11 @@ public class Client {
         }
     }
 
-    public Client(ConnectionDetails details) {
+    public ChatterClient(ChatterServerConnectionDetails details) {
         this(details.host, details.port, details.username);
     }
 
-    public ServerConnection getServer() {
+    public ChatterServerConnection getServer() {
         return server;
     }
 
@@ -47,7 +47,7 @@ public class Client {
     public static void main(String[] args) throws Exception {
         AnsiConsole.systemInstall();
         
-        ConnectionDetails details = new ConnectionDetails();
+        ChatterServerConnectionDetails details = new ChatterServerConnectionDetails();
 
         boolean cliInput = false;
         if (args.length == 1) {
@@ -78,12 +78,12 @@ public class Client {
             details.username = args[3];
         } else {
             // GUI input
-            details = ClientRender.getConnectionDetails();
+            details = ChatterClientUI.getConnectionDetails();
         }
 
         System.out.println("Connecting with details: " + details + "...");
         CommandManager.initCommands();
-        Client client = new Client(details);
+        ChatterClient client = new ChatterClient(details);
         if (client.getServer().isClosed()) {
             System.exit(2);
         }
@@ -91,8 +91,8 @@ public class Client {
             JOptionPane.showMessageDialog(null, "Failed to connect to server with details: " + details);
             System.exit(1);
         }
-        ClientRender.init(client, client.server);
-        ClientRender.getFrame().addWindowListener(new WindowListener() {
+        ChatterClientUI.init(client, client.server);
+        ChatterClientUI.getFrame().addWindowListener(new WindowListener() {
             public void windowClosing(WindowEvent e) {
                 client.quit();
                 System.exit(0);

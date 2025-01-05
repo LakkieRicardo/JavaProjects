@@ -4,6 +4,9 @@ import java.io.BufferedReader;
 import java.io.PrintWriter;
 import java.net.*;
 
+/**
+ * Local copy of all of the user data in a server.
+ */
 public class ServerUser {
 
     public String username = "";

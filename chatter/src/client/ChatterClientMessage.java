@@ -1,11 +1,11 @@
 package client;
 
-public class ClientMessage {
+public class ChatterClientMessage {
     
-    public final ClientUser sender;
+    public final ChatterClientUser sender;
     public final String content;
 
-    public ClientMessage(ClientUser sender, String content) {
+    public ChatterClientMessage(ChatterClientUser sender, String content) {
         this.sender = sender;
         this.content = content;
     }
