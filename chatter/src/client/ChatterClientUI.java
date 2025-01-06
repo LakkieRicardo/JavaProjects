@@ -14,10 +14,8 @@ import java.awt.event.*;
 import static org.fusesource.jansi.Ansi.*;
 import static org.fusesource.jansi.Ansi.Color.*;
 
-/**
- * Formats client-side CLI
- */
-public class ClientRender {
+// TODO convert this to a subclass of JFrame and away from being a singleton
+public class ChatterClientUI {
     
     private static JFrame frame;
     private static ColorPane messageHistory;
@@ -26,9 +24,9 @@ public class ClientRender {
     private static JTextField hostField;
     private static JTextField portField;
     private static JTextField usernameField;
-    private static ConnectionDetails details;
+    private static ChatterServerConnectionDetails details;
     
-    private ClientRender() { }
+    private ChatterClientUI() { }
 
     private static void handleConnectClick() {
         String hostText = hostField.getText();
@@ -58,7 +56,7 @@ public class ClientRender {
         }
     }
 
-    public static ConnectionDetails getConnectionDetails() {
+    public static ChatterServerConnectionDetails getConnectionDetails() {
         JFrame frame = new JFrame("Connection details");
         frame.setLayout(new GridBagLayout());
         frame.setResizable(true);
@@ -140,7 +138,7 @@ public class ClientRender {
         usernameCons.gridy = 3;
         frame.add(usernameField, usernameCons);
 
-        details = new ConnectionDetails();
+        details = new ChatterServerConnectionDetails();
 
         // Submit button
         JButton button = new JButton("Submit");
@@ -189,7 +187,7 @@ public class ClientRender {
      * @param server
      * @throws IOException
      */
-    public static void init(Client client, ServerConnection server) throws Exception {
+    public static void init(ChatterClient client, ChatterServerConnection server) throws Exception {
         frame = new JFrame("Messenger client: " + server.getUsername());
         frame.setLayout(new GridBagLayout());
         frame.setSize(1280, 720);
@@ -224,7 +222,7 @@ public class ClientRender {
                             return;
                         }
                         server.sendMessage(content);
-                        ClientMessage selfMessage = new ClientMessage(server.getSelfUser(false), content);
+                        ChatterClientMessage selfMessage = new ChatterClientMessage(server.getSelfUser(false), content);
                         showMessage(selfMessage);
                     } catch (Exception ex) {
                         ex.printStackTrace();
@@ -259,7 +257,7 @@ public class ClientRender {
         messageHistory.setEditable(false);
     }
     
-    public static synchronized void showMessage(ClientMessage message) throws IOException {
+    public static synchronized void showMessage(ChatterClientMessage message) throws IOException {
         if (message.content.length() == 0 || message.content.contains("\n")) {
             return;
         }
@@ -274,7 +272,7 @@ public class ClientRender {
         messageHistory.setEditable(false);
     }
 
-    public static String getHeaderText(ServerConnection server) throws IOException {
+    public static String getHeaderText(ChatterServerConnection server) throws IOException {
         return String.format("Connected to %s on port %s, %s connected users", server.socket.getInetAddress(), server.socket.getPort(), server.getConnectedUsers(true).size());
     }
 
@@ -288,6 +286,22 @@ public class ClientRender {
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    public static void createFrameFromClient(ChatterClient client) throws Exception {
+        ChatterClientUI.init(client, client.server);
+        ChatterClientUI.getFrame().addWindowListener(new WindowListener() {
+            public void windowClosing(WindowEvent e) {
+                client.quit();
+                System.exit(0);
+            }
+            public void windowActivated(WindowEvent e) { }
+            public void windowClosed(WindowEvent e) { }
+            public void windowDeactivated(WindowEvent e) { }
+            public void windowDeiconified(WindowEvent e) { }
+            public void windowIconified(WindowEvent e) { }
+            public void windowOpened(WindowEvent e) { }
+        });
     }
 
 }

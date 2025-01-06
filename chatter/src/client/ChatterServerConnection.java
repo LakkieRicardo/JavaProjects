@@ -10,18 +10,18 @@ import org.fusesource.jansi.Ansi;
 
 import util.ServerDataCodes;
 
-public class ServerConnection implements Flushable, Closeable {
+public class ChatterServerConnection implements Flushable, Closeable {
     
     private String username;
     public final Socket socket;
     public final PrintWriter writer;
     public final BufferedReader reader;
     public final Thread listenerThread, pingThread;
-    private List<ClientUser> connectedUsersCache;
+    private List<ChatterClientUser> connectedUsersCache;
 
     public long lastPingTime = 0, lastPing = 0;
 
-    public ServerConnection(InetAddress target, int port, String username) throws UnknownHostException, IOException {
+    public ChatterServerConnection(InetAddress target, int port, String username) throws UnknownHostException, IOException {
         this.username = username;
         socket = new Socket(target, port);
         writer = new PrintWriter(socket.getOutputStream());
@@ -40,7 +40,7 @@ public class ServerConnection implements Flushable, Closeable {
             pingThread = null;
             return;
         }
-        connectedUsersCache = Arrays.asList(new ClientUser(username, this));
+        connectedUsersCache = Arrays.asList(new ChatterClientUser(username, this));
         listenerThread = new Thread(this::listen);
         listenerThread.start();
         pingThread = new Thread(this::pingLoop);
@@ -78,11 +78,11 @@ public class ServerConnection implements Flushable, Closeable {
                 if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.USER_LIST_CODE)) {
                     String userListData = serverResponse.substring((ServerDataCodes.RESPONSE_CODE + ServerDataCodes.USER_LIST_CODE).length());
                     if (!userListData.contains(";")) {
-                        connectedUsersCache = Arrays.asList(ClientUser.interpretServerData(userListData, this));
+                        connectedUsersCache = Arrays.asList(ChatterClientUser.interpretServerData(userListData, this));
                     }
-                    List<ClientUser> userList = new ArrayList<ClientUser>();
+                    List<ChatterClientUser> userList = new ArrayList<ChatterClientUser>();
                     for (String user : userListData.split(";")) {
-                        userList.add(ClientUser.interpretServerData(user, this));
+                        userList.add(ChatterClientUser.interpretServerData(user, this));
                     }
                     connectedUsersCache = userList;
                 }
@@ -92,30 +92,30 @@ public class ServerConnection implements Flushable, Closeable {
                     if (separatorIndex == -1) {
                         continue;
                     }
-                    ClientUser sender = ClientUser.interpretServerData(updateData.substring(0, separatorIndex), this);
+                    ChatterClientUser sender = ChatterClientUser.interpretServerData(updateData.substring(0, separatorIndex), this);
                     if (sender.username.equals(username)) {
                         // Sender is self, don't repeat
                         continue;
                     }
                     String content = updateData.substring(separatorIndex + 1);
-                    ClientMessage message = new ClientMessage(sender, content);
-                    ClientRender.showMessage(message);
+                    ChatterClientMessage message = new ChatterClientMessage(sender, content);
+                    ChatterClientUI.showMessage(message);
                 }
                 if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.NEW_USER_CODE)) {
                     String updateData = serverResponse.substring((ServerDataCodes.UPDATE_CODE + ServerDataCodes.NEW_USER_CODE).length());
                     getConnectedUsers(true);
-                    ClientRender.showMessage(updateData + " just connected! Say hi!");
+                    ChatterClientUI.showMessage(updateData + " just connected! Say hi!");
                 }
                 if (serverResponse.equals(ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_OK_CODE + ServerDataCodes.USERNAME_CODE)) {
-                    ClientRender.getFrame().setTitle("Messenger client: " + username);
+                    ChatterClientUI.getFrame().setTitle("Messenger client: " + username);
                 }
                 if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BROADCAST_CODE)) {
                     String updateData = serverResponse.substring((ServerDataCodes.UPDATE_CODE + ServerDataCodes.BROADCAST_CODE).length());
-                    ClientRender.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(updateData).toString());
+                    ChatterClientUI.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(updateData).toString());
                 }
                 if (serverResponse.equals(ServerDataCodes.UPDATE_CODE + ServerDataCodes.SERVER_SHUTDOWN_CODE)) {
                     JOptionPane.showMessageDialog(null, "Server is shutting down!");
-                    ClientRender.getFrame().dispose();
+                    ChatterClientUI.getFrame().dispose();
                     close();
                     System.exit(0);
                 }
@@ -130,14 +130,14 @@ public class ServerConnection implements Flushable, Closeable {
                     String errorMessage = serverResponse.substring((ServerDataCodes.RESPONSE_CODE + ServerDataCodes.RESPONSE_ERR_CODE + ServerDataCodes.USERNAME_CODE).length());
                     String[] errorMessageParts = errorMessage.split(";");
                     username = errorMessageParts[0];
-                    ClientRender.showMessage(Ansi.ansi().fgRed().a("Failed to change username: " + errorMessageParts[1]).fgBlack().toString());
+                    ChatterClientUI.showMessage(Ansi.ansi().fgRed().a("Failed to change username: " + errorMessageParts[1]).fgBlack().toString());
                 }
                 if (serverResponse.startsWith(ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE)) {
                     String updateMessage = serverResponse.substring((ServerDataCodes.UPDATE_CODE + ServerDataCodes.DISCONNECT_CODE).length());
-                    ClientRender.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(String.format("User %s has disconnected", updateMessage)).toString());
+                    ChatterClientUI.showMessage(Ansi.ansi().fgYellow().a("[Server] ").fgBlack().a(String.format("User %s has disconnected", updateMessage)).toString());
                 }
                 if (serverResponse.equals(ServerDataCodes.UPDATE_CODE + ServerDataCodes.BANNED_CODE)) {
-                    ClientRender.showMessage(Ansi.ansi().fgRed().a("Server has banned you").toString());
+                    ChatterClientUI.showMessage(Ansi.ansi().fgRed().a("Server has banned you").toString());
                     close();
                     System.exit(0);
                 }
@@ -165,7 +165,7 @@ public class ServerConnection implements Flushable, Closeable {
      * @return List of connected users from cache
      * @throws IOException If the server responded with an error
      */
-    public List<ClientUser> getConnectedUsers(boolean updateCache) throws IOException {
+    public List<ChatterClientUser> getConnectedUsers(boolean updateCache) throws IOException {
         if (updateCache) {
             // Make request to server
             writer.println(ServerDataCodes.REQUEST_CODE + ServerDataCodes.USER_LIST_CODE);
@@ -177,11 +177,11 @@ public class ServerConnection implements Flushable, Closeable {
     /**
      * Retrieves the user connected to this server
      * @param updateUserListCache Whether to update user list cache
-     * @return The {@link ClientUser} connected to this server
+     * @return The {@link ChatterClientUser} connected to this server
      * @throws IOException If the server throws an error; only if updating cache
      */
-    public ClientUser getSelfUser(boolean updateUserListCache) throws IOException {
-        for (ClientUser user : getConnectedUsers(updateUserListCache)) {
+    public ChatterClientUser getSelfUser(boolean updateUserListCache) throws IOException {
+        for (ChatterClientUser user : getConnectedUsers(updateUserListCache)) {
             if (user.username.equals(username)) {
                 return user;
             }

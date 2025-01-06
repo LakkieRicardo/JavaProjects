@@ -4,8 +4,8 @@ import java.util.*;
 
 import org.fusesource.jansi.Ansi;
 
-import client.Client;
-import client.ClientRender;
+import client.ChatterClient;
+import client.ChatterClientUI;
 import client.commands.impl.*;
 
 public class CommandManager {
@@ -26,7 +26,7 @@ public class CommandManager {
         initCommand(new CommandUsername());
     }
 
-    public static void handleCommand(String input, Client client) {
+    public static void handleCommand(String input, ChatterClient client) {
         if (!input.startsWith("/")) {
             return;
         }
@@ -54,7 +54,7 @@ public class CommandManager {
     }
 
     private static void logInvalidCommand() {
-        ClientRender.showMessage(Ansi.ansi().fgRed().a("Invalid command!").fgBlack().toString());
+        ChatterClientUI.showMessage(Ansi.ansi().fgRed().a("Invalid command!").fgBlack().toString());
     }
 
     public static Collection<ICommand> getCommands() {

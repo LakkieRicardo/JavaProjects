@@ -1,11 +1,11 @@
 package client.commands;
 
-import client.Client;
-import client.ServerConnection;
+import client.ChatterClient;
+import client.ChatterServerConnection;
 
 public interface ICommand {
 
-    void interpret(Client client, ServerConnection server, String[] args);
+    void interpret(ChatterClient client, ChatterServerConnection server, String[] args);
 
     String getHelpContext();
 

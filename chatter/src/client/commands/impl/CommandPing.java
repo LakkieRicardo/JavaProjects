@@ -1,13 +1,13 @@
 package client.commands.impl;
 
-import client.Client;
-import client.ServerConnection;
+import client.ChatterClient;
+import client.ChatterServerConnection;
 import client.commands.CommandHelper;
 import client.commands.ICommand;
 
 public class CommandPing implements ICommand {
 
-    public void interpret(Client client, ServerConnection server, String[] args) {
+    public void interpret(ChatterClient client, ChatterServerConnection server, String[] args) {
         CommandHelper.logCommandResponse("Ping: " + server.lastPing + "ms");
     }
 
