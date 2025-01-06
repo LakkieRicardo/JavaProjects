@@ -288,4 +288,20 @@ public class ChatterClientUI {
         }
     }
 
+    public static void createFrameFromClient(ChatterClient client) throws Exception {
+        ChatterClientUI.init(client, client.server);
+        ChatterClientUI.getFrame().addWindowListener(new WindowListener() {
+            public void windowClosing(WindowEvent e) {
+                client.quit();
+                System.exit(0);
+            }
+            public void windowActivated(WindowEvent e) { }
+            public void windowClosed(WindowEvent e) { }
+            public void windowDeactivated(WindowEvent e) { }
+            public void windowDeiconified(WindowEvent e) { }
+            public void windowIconified(WindowEvent e) { }
+            public void windowOpened(WindowEvent e) { }
+        });
+    }
+
 }
